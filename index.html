@@ -1,0 +1,336 @@
+<!-- accountForSandbox@yandex.com -->
+<!-- passw0rd -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        .task{
+            display:inline-block;
+            vertical-align:top;
+            padding:10px;
+            margin:15px 10px 10px;
+            border:1px solid rgba(0,0,0,.1);
+            box-sizing:border-box;
+            background:#fff;
+            overflow: hidden;
+        }
+        .task_focused{
+            box-shadow:0 10px 20px 0 rgba(0,0,0,.15);
+            border-color:transparent;
+            transition:box-shadow .15s ease-out,border-color .15s ease-out
+        }
+        .task__error {
+            font-size:15px;
+            line-height:16px;
+            text-align:center;
+            color:#fff;
+            position:relative;
+            top:-9px;
+            left:-9px;
+            width:100%;
+            padding:9px;
+            background:hsla(0,100%,70%,.9);transition:opacity .1s ease-out;cursor:default
+        }
+        .task__error:hover{opacity:.85}
+        .task:not(.task_focused) .popup_visible.popup_type_error,
+        .task:not(.task_focused) .task__error{opacity:.65}
+        .task,
+        .task__cont-img{
+            position: relative;
+        }
+        .task .task-img{
+            max-width: 100%;
+        min-height: 100%;
+        display: block;
+        }
+        .task .cont-box{
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+        }
+        .cont-box .box {
+            border: 1px solid #000;
+            position: absolute;
+            z-index: 10;
+            cursor: pointer
+        }
+        .cont-box .box:hover {
+            border-color: #fff !important;
+        }
+        .cont-box .box.done {
+            border: 1px solid #0f0;
+            background-color: rgba(0,255,0,0.3);
+            z-index: 5;
+        }
+        .cont-box .box.selected {
+            border: 1px solid #f00;
+            background-color: rgba(255,0,0,0.3);
+            
+        }
+        
+    </style>
+    <script>
+        var listClasses = [
+            {
+                id: 4605246003516,
+                name: 'Greenfield'
+            },
+            {
+                id: 4602541000028,
+                name: 'Агуша'
+            },
+            {
+                id: 4011100091993,
+                name: 'Милкивей'
+            },{
+                id: 4607065730109,
+                name: 'Марс'
+            },{
+                id: 5000159539480,
+                name: 'Сникерс Лесной орех'
+            },{
+                id: 5000159455367,
+                name: 'Сникерс Супер шок'
+            }
+        ]
+        window.selectBox = null
+        window.transform = {
+            x: 0, 
+            y: 0,
+            s: 1
+        }
+       
+        function createListBox (params) {
+            var json = params.json;
+            var parent = params.parent
+            var funTask = params.funTask ? params.funTask : this
+                
+            parent.style.position = 'relative';
+            var cont_box = document.createElement('div');
+            cont_box.className = 'cont-box';
+            parent.appendChild(cont_box);
+            // console.log(funTask.getTemplateData)
+            this.clickBox = function(obj, box){
+                if(selectBox) {
+                    selectBox.classList.remove('selected')
+                }
+                if(funTask.setResult){
+                    funTask.setResult(obj, 11111)
+                }
+                box.classList.add('selected')
+                selectBox = box
+                // console.log(window.fun_listClasses)
+                fun_listClasses.updateClasses(box)
+            }
+            
+            for(var i = 0; i < json.length; i++){
+                //console.log(json[i])
+                var elem = new itemBox(json[i])
+                elem.addEventListener('click', this.clickBox.bind(this, json[i], elem) )
+                cont_box.appendChild(elem)
+            }
+        }
+        function itemBox(data) {
+            var elem = document.createElement('div');
+            elem.className = 'box'
+            elem.style.width = Math.floor((data.boxes.x_max - data.boxes.x_min)*100) + '%';
+            elem.style.height = Math.floor((data.boxes.y_max - data.boxes.y_min)*100) + '%';
+            elem.style.left = Math.floor( data.boxes.x_min*100 ) + '%';
+            elem.style.top  = Math.floor( data.boxes.y_min*100 ) + '%';
+            return elem
+        }
+        function requestJson(json){
+            var parents = document.body//this.getDOMElement()
+            var elem = parents.querySelector(".task__cont-img");
+            var params = {
+                json: JSON.parse(json),
+                parent: elem,
+                funTask: this != window  ? this : false 
+            }
+            var funListBox = new createListBox(params)
+        }
+
+        function loadData(){
+            var xhr = new XMLHttpRequest();
+            var url = './IMG_3865.json'//'http://demo-f1.neuromation.io/toloka/IMG_3865.json'
+
+            xhr.open('GET', url, true);
+            // xhr.setRequestHeader("Authorization", "AQAAAAARpTFIAAMFR6gwditFbUb5mwNI1ZYEuuA")
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.send(null);
+
+            xhr.onreadystatechange = function() { 
+                if (xhr.readyState != 4) return;
+
+                if (xhr.status == 200) {
+                    //console.log(xhr.responseText)
+                    requestJson(xhr.responseText)
+                }
+            }
+        }
+        
+        function loadClasses() {
+            //console.log('loadClasses')
+            var parents = document.body
+            var cont_list_classes = document.createElement('div');
+            cont_list_classes.className = 'list-classes'
+            parents.append(cont_list_classes)
+            var select = document.createElement('select')
+            cont_list_classes.appendChild(select)
+            var opt_default = document.createElement('option');
+            opt_default.value = '-1'
+            opt_default.innerHTML = '-'
+            select.appendChild(opt_default)
+
+            listClasses.forEach(function(record){
+                var opt = document.createElement('option');
+                opt.value = record.id
+                opt.innerHTML = record.name
+                select.appendChild(opt)
+            })
+            select.onchange = function(){
+                // console.log('fun_listClasses')
+                if(window.selectBox) {
+                    selectBox.classList.remove('selected')
+                    if(this.selectedOptions[0].value != '-1') {
+                        selectBox.classList.add('done')
+                        selectBox.setAttribute('value', this.selectedOptions[0].value)
+                    } else {
+                        selectBox.classList.remove('done')
+                        selectBox.removeAttribute('value')
+                    }
+                    //console.log(this.selectedOptions[0].value)
+                }
+            }
+
+            this.updateClasses = function(box){
+                var val = box.getAttribute('value')
+                if(val) {
+                    for(var i = 0; i < select.options.length; i++){
+                        if(select.options[i].value == val){
+                            select.options[i].selected = true
+                        }
+                    }
+                } else {
+                    select.options[0].selected = true
+                }
+            }
+        }
+        window.onload = function(){
+            var elem__task__contImg = window.elem__task__contImg = document.querySelector(".task__cont-img")
+            elem__task__contImg.addEventListener('click', function(e){
+                if(selectBox && !e.target.classList.contains('box')) {
+                    // console.log('no box')
+                    selectBox.classList.remove('selected')
+                }
+            })
+            elem__task__contImg.addEventListener('mouseup', mouseUp.bind(this))
+            elem__task__contImg.addEventListener('mousedown', mouseDown.bind(this))
+            elem__task__contImg.addEventListener('mousemove', mouseMove.bind(this))
+            
+            loadData()
+            window.fun_listClasses = new loadClasses()
+            document.getElementById("minusBtn").addEventListener('click', plusBtn.bind(this))
+            document.getElementById("plusBtn").addEventListener('click', minusBtn.bind(this))
+
+            window.basisCoor = null
+        }
+        function minusBtn (e) {
+            console.log('minusBtn', e)
+            transform.x += 10
+            transform.y += 10
+            transform.s += 0.1
+            setTranform(transform)
+        }
+        function plusBtn (e) {
+            console.log('plusBtn', e)
+            transform.x -= 10
+            transform.y -= 10
+            transform.s -= 0.1
+            setTranform(transform)
+        }
+        function setTranform(obj){
+            console.log('setTranform')
+            if(!elem__task__contImg) return
+            elem__task__contImg.style.transform = `translate(${obj.x}px, ${obj.y}px) scale(${obj.s})`;
+        }
+
+        function mouseUp(e){
+
+            var coor = getCoor(e)
+            console.log('mouseMove', coor.client, coor.screen)
+            var new_coor = getDiffCoor(coor)
+            console.log(new_coor)
+            transform = {
+                x: transform.x + new_coor.x,
+                y: transform.y + new_coor.y,
+                s: transform.s
+            }
+            setTranform(transform)
+            basisCoor = null
+        }
+        function mouseDown(e){
+            var coor = getCoor(e)
+            console.log('mouseDown', coor.client, coor.screen)
+            basisCoor = coor
+        }
+        function mouseMove(e){
+            if(!basisCoor) return
+            var coor = getCoor(e)
+            console.log('mouseMove', coor.client, coor.screen)
+            var new_coor = getDiffCoor(coor)
+            console.log(new_coor)
+            var transform_mouse = {
+                x: transform.x + new_coor.x,
+                y: transform.y + new_coor.y,
+                s: transform.s
+            }
+            setTranform(transform_mouse)
+            
+        }
+        function getCoor(e) {
+            return {
+                client: {
+                    x: e.clientX,
+                    y: e.clientY
+                },
+                screen: {
+                    x: e.screenX,
+                    y: e.screenY
+                }
+            }
+        }
+        function getDiffCoor(coor) {
+            if(!basisCoor) return {x: 0, y:0}
+
+            return {
+                x: coor.client.x - basisCoor.client.x,
+                y: coor.client.y - basisCoor.client.y
+            }
+        }
+        
+    </script>
+</head>
+<body>
+    <div class="task-suite">
+        <div class="task ">
+            <div class="task__cont-img">
+                <img src="http://demo-f1.neuromation.io/toloka/IMG_3865.JPG" class="task-img">
+            </div>
+        </div>
+        <button id="minusBtn">-</button>
+        <button id="plusBtn">+</button>
+        <!-- 1EnbuqvM3Sg5k1fZDjfGIK_90fZyd4wC -->
+    </div>
+</body>
+</html>
