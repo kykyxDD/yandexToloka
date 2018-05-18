@@ -8,44 +8,52 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     <style>
+        body {
+          margin: 0
+        }
         .task{
-            display:inline-block;
-            vertical-align:top;
-            padding:10px;
-            margin:15px 10px 10px;
-            border:1px solid rgba(0,0,0,.1);
-            box-sizing:border-box;
-            background:#fff;
-            overflow: hidden;
+          display:inline-block;
+          vertical-align:top;
+          /* padding:10px; */
+          /* margin:15px 10px 10px; */
+          border:1px solid rgba(0,0,0,.1);
+          box-sizing:border-box;
+          background:#fff;
+          overflow: hidden;
         }
         .task_focused{
-            box-shadow:0 10px 20px 0 rgba(0,0,0,.15);
-            border-color:transparent;
-            transition:box-shadow .15s ease-out,border-color .15s ease-out
+          box-shadow:0 10px 20px 0 rgba(0,0,0,.15);
+          border-color:transparent;
+          transition:box-shadow .15s ease-out,border-color .15s ease-out
         }
         .task__error {
-            font-size:15px;
-            line-height:16px;
-            text-align:center;
-            color:#fff;
-            position:relative;
-            top:-9px;
-            left:-9px;
-            width:100%;
-            padding:9px;
-            background:hsla(0,100%,70%,.9);transition:opacity .1s ease-out;cursor:default
+          font-size:15px;
+          line-height:16px;
+          text-align:center;
+          color:#fff;
+          position:relative;
+          top:-9px;
+          left:-9px;
+          width:100%;
+          padding:9px;
+          background:hsla(0,100%,70%,.9);transition:opacity .1s ease-out;cursor:default
         }
         .task__error:hover{opacity:.85}
         .task:not(.task_focused) .popup_visible.popup_type_error,
         .task:not(.task_focused) .task__error{opacity:.65}
         .task,
         .task__cont-img{
-            position: relative;
+          position: relative;
         }
+        .task__cont-img.task__move *{
+          pointer-events: none
+        }
+        
         .task .task-img{
             max-width: 100%;
-        min-height: 100%;
-        display: block;
+            max-height: 100%;
+            display: block;
+            pointer-events: none;
         }
         .task .cont-box{
         position: absolute;
@@ -110,73 +118,154 @@
         }
        
         function createListBox (params) {
-            var json = params.json;
-            var parent = params.parent
-            var funTask = params.funTask ? params.funTask : this
-                
-            parent.style.position = 'relative';
-            var cont_box = document.createElement('div');
-            cont_box.className = 'cont-box';
-            parent.appendChild(cont_box);
-            // console.log(funTask.getTemplateData)
-            this.clickBox = function(obj, box){
-                if(selectBox) {
-                    selectBox.classList.remove('selected')
-                }
-                if(funTask.setResult){
-                    funTask.setResult(obj, 11111)
-                }
-                box.classList.add('selected')
-                selectBox = box
-                // console.log(window.fun_listClasses)
-                fun_listClasses.updateClasses(box)
+          var json = params.json;
+          var parent = params.parent
+          var funTask = params.funTask ? params.funTask : this
+              
+          parent.style.position = 'relative';
+          var cont_box = document.createElement('div');
+          cont_box.className = 'cont-box';
+          parent.appendChild(cont_box);
+
+          this.clickBox = function(obj, box){
+            console.log('clickBox')
+            if(basisCoor) {
+              mouseUp()
             }
-            
-            for(var i = 0; i < json.length; i++){
-                //console.log(json[i])
-                var elem = new itemBox(json[i])
-                elem.addEventListener('click', this.clickBox.bind(this, json[i], elem) )
-                cont_box.appendChild(elem)
+            if(selectBox) {
+              selectBox.classList.remove('selected')
+            }
+            if(funTask.setResult){
+              funTask.setResult(obj, 11111)
+            }
+            box.classList.add('selected')
+            selectBox = box
+            fun_listClasses.updateClasses(box)
+          }
+          
+          for(var i = 0; i < json.length; i++){
+
+              if(json[i].isCovered) continue
+
+              var elem = new itemBox(json[i])
+              elem.addEventListener('click', this.clickBox.bind(this, json[i], elem) )
+              cont_box.appendChild(elem)
             }
         }
         function itemBox(data) {
             var elem = document.createElement('div');
             elem.className = 'box'
-            elem.style.width = Math.floor((data.boxes.x_max - data.boxes.x_min)*100) + '%';
+            elem.style.width  = Math.floor((data.boxes.x_max - data.boxes.x_min)*100) + '%';
             elem.style.height = Math.floor((data.boxes.y_max - data.boxes.y_min)*100) + '%';
-            elem.style.left = Math.floor( data.boxes.x_min*100 ) + '%';
-            elem.style.top  = Math.floor( data.boxes.y_min*100 ) + '%';
+            elem.style.left   = Math.floor( data.boxes.x_min*100 ) + '%';
+            elem.style.top    = Math.floor( data.boxes.y_min*100 ) + '%';
             return elem
         }
-        function requestJson(json){
-            var parents = document.body//this.getDOMElement()
-            var elem = parents.querySelector(".task__cont-img");
-            var params = {
-                json: JSON.parse(json),
-                parent: elem,
-                funTask: this != window  ? this : false 
+        // поиска boxes, которые накладываются друг на друга и можно объединить
+        function checkBoxes(json){
+          var boxes = json
+
+          if (!boxes.length) [] 
+
+          let j, percent, leftCoord, rightCoord
+          let cursor = (boxes.length - 1)
+          while (cursor > 0) {
+            leftCoord = boxes[cursor]
+
+            if (!leftCoord.isCovered) {
+              for (j = 0; j < cursor; j++) {
+                rightCoord = boxes[j]
+
+                if (!rightCoord.isCovered) {
+                  percent = rectIntersectRatio(leftCoord.boxes, rightCoord.boxes)
+
+                  if (percent > 0.5) {
+                    boxes.hasGroups = true
+                    rightCoord.isCovered = true
+                  }
+                }
+              }
             }
-            var funListBox = new createListBox(params)
+            cursor--
+          }
+          return boxes
+        }
+        function rectIntersectRatio (firstBox, secondBox) {
+          let firstLeft, firstTop, firstRight, firstBottom
+          let secondLeft, secondTop, secondRight, secondBottom
+          let maxLeft, maxTop, maxRight, maxBottom
+          let dx, dy, sq1, sq2
+
+          firstLeft = firstBox.x_min
+          firstTop = firstBox.y_min
+          firstRight = firstBox.x_max
+          firstBottom = firstBox.y_max
+
+          secondLeft = secondBox.x_min
+          secondTop = secondBox.y_min
+          secondRight = secondBox.x_max
+          secondBottom = secondBox.y_max
+
+          if (secondLeft < firstLeft && secondRight < firstLeft) {
+          return 0
+          }
+          if (secondLeft > firstRight && secondRight > firstRight) {
+          return 0
+          }
+          if (secondTop < firstTop && secondBottom < firstTop) {
+          return 0
+          }
+          if (secondTop > firstBottom && secondBottom > firstBottom) {
+          return 0
+          }
+
+          // We have intersection here.
+          maxLeft = Math.max(firstLeft, secondLeft)
+          maxTop = Math.max(firstTop, secondTop)
+
+          maxRight = Math.min(firstRight, secondRight)
+          maxBottom = Math.min(firstBottom, secondBottom)
+
+          dx = maxRight - maxLeft
+          dy = maxBottom - maxTop
+
+          sq1 = dx * dy
+          sq2 = (secondRight - secondLeft) * (secondBottom - secondTop)
+
+          return sq1 / sq2
+
+        }
+        function requestJson(json){
+          var parents = document.body//this.getDOMElement()
+          var elem = parents.querySelector(".task__cont-img");
+          var check_boxes = checkBoxes(JSON.parse(json))
+
+          var params = {
+            json: check_boxes,
+            parent: elem,
+            funTask: this != window  ? this : false 
+          }
+          var funListBox = new createListBox(params)
         }
 
         function loadData(){
-            var xhr = new XMLHttpRequest();
-            var url = './IMG_3865.json'//'http://demo-f1.neuromation.io/toloka/IMG_3865.json'
+          var xhr = new XMLHttpRequest();
+          var url = './IMG_3865.json'//'http://demo-f1.neuromation.io/toloka/IMG_3865.json'
 
-            xhr.open('GET', url, true);
-            // xhr.setRequestHeader("Authorization", "AQAAAAARpTFIAAMFR6gwditFbUb5mwNI1ZYEuuA")
-            xhr.setRequestHeader("Content-Type", "application/json");
+          xhr.open('GET', url, true);
+          // xhr.setRequestHeader("Authorization", "AQAAAAARpTFIAAMFR6gwditFbUb5mwNI1ZYEuuA")
+          xhr.setRequestHeader("Content-Type", "application/json");
 
-            xhr.send(null);
+          xhr.send(null);
 
-            xhr.onreadystatechange = function() { 
-                if (xhr.readyState != 4) return;
+          xhr.onreadystatechange = function() { 
+            if (xhr.readyState != 4) return;
 
-                if (xhr.status == 200) {
-                    //console.log(xhr.responseText)
-                    requestJson(xhr.responseText)
-                }
+            if (xhr.status == 200) {
+              //console.log(xhr.responseText)
+              requestJson(xhr.responseText)
             }
+          }
         }
         
         function loadClasses() {
@@ -193,46 +282,46 @@
             select.appendChild(opt_default)
 
             listClasses.forEach(function(record){
-                var opt = document.createElement('option');
-                opt.value = record.id
-                opt.innerHTML = record.name
-                select.appendChild(opt)
+              var opt = document.createElement('option');
+              opt.value = record.id
+              opt.innerHTML = record.name
+              select.appendChild(opt)
             })
             select.onchange = function(){
-                // console.log('fun_listClasses')
-                if(window.selectBox) {
-                    selectBox.classList.remove('selected')
-                    if(this.selectedOptions[0].value != '-1') {
-                        selectBox.classList.add('done')
-                        selectBox.setAttribute('value', this.selectedOptions[0].value)
-                    } else {
-                        selectBox.classList.remove('done')
-                        selectBox.removeAttribute('value')
-                    }
-                    //console.log(this.selectedOptions[0].value)
+              // console.log('fun_listClasses')
+              if(window.selectBox) {
+                selectBox.classList.remove('selected')
+                if(this.selectedOptions[0].value != '-1') {
+                  selectBox.classList.add('done')
+                  selectBox.setAttribute('value', this.selectedOptions[0].value)
+                } else {
+                  selectBox.classList.remove('done')
+                  selectBox.removeAttribute('value')
                 }
+                //console.log(this.selectedOptions[0].value)
+              }
             }
 
             this.updateClasses = function(box){
-                var val = box.getAttribute('value')
-                if(val) {
-                    for(var i = 0; i < select.options.length; i++){
-                        if(select.options[i].value == val){
-                            select.options[i].selected = true
-                        }
-                    }
-                } else {
-                    select.options[0].selected = true
+              var val = box.getAttribute('value')
+              if(val) {
+                for(var i = 0; i < select.options.length; i++){
+                  if(select.options[i].value == val){
+                    select.options[i].selected = true
+                  }
                 }
+              } else {
+                select.options[0].selected = true
+              }
             }
         }
         window.onload = function(){
             var elem__task__contImg = window.elem__task__contImg = document.querySelector(".task__cont-img")
+            var elem__task = window.elem__task = document.querySelector('.task');
             elem__task__contImg.addEventListener('click', function(e){
-                if(selectBox && !e.target.classList.contains('box')) {
-                    // console.log('no box')
-                    selectBox.classList.remove('selected')
-                }
+              if(selectBox && !e.target.classList.contains('box')) {
+                selectBox.classList.remove('selected')
+              }
             })
             elem__task__contImg.addEventListener('mouseup', mouseUp.bind(this))
             elem__task__contImg.addEventListener('mousedown', mouseDown.bind(this))
@@ -242,83 +331,160 @@
             window.fun_listClasses = new loadClasses()
             document.getElementById("minusBtn").addEventListener('click', plusBtn.bind(this))
             document.getElementById("plusBtn").addEventListener('click', minusBtn.bind(this))
+            // window.addEventListener('wheel', onWheel.bind(this))
+            eventListElement(elem__task__contImg)
 
             window.basisCoor = null
         }
+        function eventListElement (elem) {
+            if (elem.addEventListener) {
+                if ('onwheel' in document) {
+                    elem.addEventListener("wheel", onWheel);
+                } else if ('onmousewheel' in document) {
+                    elem.addEventListener("mousewheel", onWheel);
+                } else {
+                    elem.addEventListener("MozMousePixelScroll", onWheel);
+                }
+            } else {
+                elem.attachEvent("onmousewheel", onWheel);
+            }
+        }
         function minusBtn (e) {
-            console.log('minusBtn', e)
-            transform.x += 10
-            transform.y += 10
             transform.s += 0.1
             setTranform(transform)
         }
         function plusBtn (e) {
-            console.log('plusBtn', e)
-            transform.x -= 10
-            transform.y -= 10
             transform.s -= 0.1
             setTranform(transform)
         }
         function setTranform(obj){
             console.log('setTranform')
             if(!elem__task__contImg) return
-            elem__task__contImg.style.transform = `translate(${obj.x}px, ${obj.y}px) scale(${obj.s})`;
+            elem__task__contImg.style.transform = ` scale(${obj.s}) translate(${obj.x}px, ${obj.y}px)`;
         }
 
-        function mouseUp(e){
-
+       
+        function mouseDown(e){
+            
             var coor = getCoor(e)
-            console.log('mouseMove', coor.client, coor.screen)
+            // console.log('mouseDown', coor.client)
+            basisCoor = coor
+        }
+        
+        function mouseMove(e){
+            if(!basisCoor) return
+            elem__task__contImg.classList.add('task__move')
+            
+            var coor = getCoor(e)
             var new_coor = getDiffCoor(coor)
-            console.log(new_coor)
-            transform = {
-                x: transform.x + new_coor.x,
-                y: transform.y + new_coor.y,
+
+            var transform_mouse = getCoorTranform(new_coor)
+            console.log(transform_mouse)
+            setTranform(transform_mouse)
+        }
+
+        function getCoorTranform(coor){
+            return {
+                x: transform.x + coor.x/transform.s,
+                y: transform.y + coor.y/transform.s,
                 s: transform.s
+            }
+        }
+        function mouseUp(e){
+            elem__task__contImg.classList.remove('task__move')
+
+            if(e){
+                var coor = getCoor(e)
+                var new_coor = getDiffCoor(coor)
+                transform = getCoorTranform(new_coor)
+            } else {
+                new_coor = getDiffCoor(basisCoor)
+                transform = getCoorTranform(new_coor)
             }
             setTranform(transform)
             basisCoor = null
         }
-        function mouseDown(e){
-            var coor = getCoor(e)
-            console.log('mouseDown', coor.client, coor.screen)
-            basisCoor = coor
-        }
-        function mouseMove(e){
-            if(!basisCoor) return
-            var coor = getCoor(e)
-            console.log('mouseMove', coor.client, coor.screen)
-            var new_coor = getDiffCoor(coor)
-            console.log(new_coor)
-            var transform_mouse = {
-                x: transform.x + new_coor.x,
-                y: transform.y + new_coor.y,
-                s: transform.s
-            }
-            setTranform(transform_mouse)
-            
-        }
         function getCoor(e) {
-            return {
-                client: {
-                    x: e.clientX,
-                    y: e.clientY
-                },
-                screen: {
-                    x: e.screenX,
-                    y: e.screenY
-                }
+            var posx = 0;
+	        var posy = 0;
+            if (e.pageX || e.pageY) {
+                posx = e.pageX;
+                posy = e.pageY;
+            } else if (e.clientX || e.clientY) {
+                posx = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+                posy = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
             }
+            return {
+                x : posx,
+                y : posy
+            };
         }
         function getDiffCoor(coor) {
             if(!basisCoor) return {x: 0, y:0}
 
             return {
-                x: coor.client.x - basisCoor.client.x,
-                y: coor.client.y - basisCoor.client.y
+                x: Math.floor(coor.x - basisCoor.x),
+                y: Math.floor(coor.y - basisCoor.y)
             }
         }
-        
+        function onWheel(e) {
+            var target = e.target
+            var coor = getCoor(e)
+            var s = 0.1*(e.wheelDelta/Math.abs(e.wheelDelta))
+            var t_s = transform.s + s
+            
+            var x_1 = coor.x - target.clientWidth/2;
+            var y_1 = coor.y - target.clientHeight/2;
+            console.log(x_1, transform.x - target.clientWidth/2)
+            var diff_center = {
+                x: Math.ceil(x_1/t_s - x_1),// coor.client.x/(transform.s + s) - coor.client.x,
+                y: Math.ceil(y_1/t_s - y_1),// coor.client.y/(transform.s + s) - coor.client.y
+            }
+            
+            console.log(transform , diff_center)
+            console.log(transform.x*transform.s, transform.y*transform.s )
+            var diff_transfrom = {
+                x: transform.x*transform.s ,
+                y: transform.y*transform.s ,
+            }
+            
+            transform.x = diff_center.x
+            transform.y = diff_center.y
+            transform.s += s
+            setTranform(transform)
+        }
+        /*mouseWheel: function (ev) {
+
+            this.lastMousePos.x = ev.clientX;
+            this.lastMousePos.y = ev.clientY;
+
+            var deltaY = ev.deltaY < 0 ? -1 : ev.deltaY > 1 ? 1 : 0
+
+            this.setTransformScaleBasedOnWindowPoint(this.transformScale - deltaY * 0.1, this.lastMousePos);
+            ev.preventDefault();
+            ev.stopPropagation();
+            return false;
+
+        }
+        setTransformScaleBasedOnWindowPoint: function (scale, p) {
+            var posUnderMouse0 = this.fromWindowToCanvas(p);
+            this.setTransformScale(scale);
+            var posUnderMouse1 = this.fromWindowToCanvas(p);
+            var delta = posUnderMouse0.subPoint(posUnderMouse1);
+
+            this.setTransformOffset(this.transformOffset.subPoint(delta));
+        }
+        fromWindowToCanvas: function (pos) {
+            const rect = this.canvas.getBoundingClientRect();
+
+            var result = new Point(
+                (pos.x - rect.left) / this.transformScale - this.transformOffset.x,
+                (pos.y - rect.top) / this.transformScale - this.transformOffset.y
+            );
+
+            return result;
+        },
+        */
     </script>
 </head>
 <body>
