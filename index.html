@@ -154,6 +154,7 @@
         };
         window.selectBox = null
         window.transform = new Point(0,0,1);
+        window.min_scale = 0.3
        
         function createListBox (params) {
           var json = params.json;
@@ -388,11 +389,11 @@
           }
         }
         function minusBtn (e) {
-          transform.s += 0.1
+          transform.s = Math.max( transform.s + 0.1, min_scale)
           setTranform(transform)
         }
         function plusBtn (e) {
-          transform.s -= 0.1
+          transform.s = Math.max( transform.s - 0.1, min_scale)
           setTranform(transform)
         }
         function setTranform(obj){
@@ -477,7 +478,7 @@
 
             // var deltaY = ev.deltaY < 0 ? -1 : ev.deltaY > 1 ? 1 : 0
             var s = 0.1*(ev.wheelDelta/Math.abs(ev.wheelDelta))
-            var t_s = transform.s + s
+            var t_s = Math.max( transform.s + s, min_scale)
 
             setTransformScaleBasedOnWindowPoint(t_s, coor);
             ev.preventDefault();
@@ -500,7 +501,6 @@
         }
         function fromWindowToCanvas (pos) {
             const rect = elem__task__contImg.getBoundingClientRect();
-            // console.log('rect', rect)
 
             var result = new Point(
                 Math.floor((pos.x - rect.left) / transform.s - transform.x),
