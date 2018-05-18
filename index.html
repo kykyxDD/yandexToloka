@@ -88,34 +88,72 @@
     </style>
     <script>
         var listClasses = [
-            {
-                id: 4605246003516,
-                name: 'Greenfield'
-            },
-            {
-                id: 4602541000028,
-                name: 'Агуша'
-            },
-            {
-                id: 4011100091993,
-                name: 'Милкивей'
-            },{
-                id: 4607065730109,
-                name: 'Марс'
-            },{
-                id: 5000159539480,
-                name: 'Сникерс Лесной орех'
-            },{
-                id: 5000159455367,
-                name: 'Сникерс Супер шок'
-            }
+          {
+            id: 4605246003516,
+            name: 'Greenfield'
+          },
+          {
+            id: 4602541000028,
+            name: 'Агуша'
+          },
+          {
+            id: 4011100091993,
+            name: 'Милкивей'
+          },{
+            id: 4607065730109,
+            name: 'Марс'
+          },{
+            id: 5000159539480,
+            name: 'Сникерс Лесной орех'
+          },{
+            id: 5000159455367,
+            name: 'Сникерс Супер шок'
+          }
         ]
-        window.selectBox = null
-        window.transform = {
-            x: 0, 
-            y: 0,
-            s: 1
+        function Point(x, y, s) {
+          this.x = x ? x : 0;
+          this.y = y ? y : 0;
+          this.s = s ? s : 1;
         }
+        Point.prototype = {
+          subPoint: function (p) {
+            return new Point(this.x - p.x, this.y - p.y, this.s);
+          },
+
+          mulFloat: function (p) {
+            return new Point(this.x * p, this.y * p);
+          },
+
+          divFloat: function (p) {
+            return new Point(this.x / p, this.y / p);
+          },
+
+          divPoint: function (p) {
+            return new Point(this.x / p.x, this.y / p.y);
+          },
+
+          addPoint: function (p) {
+            return new Point(this.x + p.x, this.y + p.y);
+          },
+
+          addXY: function (x, y) {
+            return new Point(this.x + x, this.y + y);
+          },
+
+          copy: function () {
+            return new Point(this.x, this.y);
+          },
+
+          magnitude: function () {
+            return (this.x * this.x + this.y * this.y);
+          },
+
+          magnitudeSub: function (p) {
+            return this.subPoint(p).magnitude();
+          }
+        };
+        window.selectBox = null
+        window.transform = new Point(0,0,1);
        
         function createListBox (params) {
           var json = params.json;
@@ -128,7 +166,7 @@
           parent.appendChild(cont_box);
 
           this.clickBox = function(obj, box){
-            console.log('clickBox')
+            // console.log('clickBox')
             if(basisCoor) {
               mouseUp()
             }
@@ -153,13 +191,13 @@
             }
         }
         function itemBox(data) {
-            var elem = document.createElement('div');
-            elem.className = 'box'
-            elem.style.width  = Math.floor((data.boxes.x_max - data.boxes.x_min)*100) + '%';
-            elem.style.height = Math.floor((data.boxes.y_max - data.boxes.y_min)*100) + '%';
-            elem.style.left   = Math.floor( data.boxes.x_min*100 ) + '%';
-            elem.style.top    = Math.floor( data.boxes.y_min*100 ) + '%';
-            return elem
+          var elem = document.createElement('div');
+          elem.className = 'box'
+          elem.style.width  = Math.floor((data.boxes.x_max - data.boxes.x_min)*100) + '%';
+          elem.style.height = Math.floor((data.boxes.y_max - data.boxes.y_min)*100) + '%';
+          elem.style.left   = Math.floor( data.boxes.x_min*100 ) + '%';
+          elem.style.top    = Math.floor( data.boxes.y_min*100 ) + '%';
+          return elem
         }
         // поиска boxes, которые накладываются друг на друга и можно объединить
         function checkBoxes(json){
@@ -337,154 +375,175 @@
             window.basisCoor = null
         }
         function eventListElement (elem) {
-            if (elem.addEventListener) {
-                if ('onwheel' in document) {
-                    elem.addEventListener("wheel", onWheel);
-                } else if ('onmousewheel' in document) {
-                    elem.addEventListener("mousewheel", onWheel);
-                } else {
-                    elem.addEventListener("MozMousePixelScroll", onWheel);
-                }
+          if (elem.addEventListener) {
+            if ('onwheel' in document) {
+              elem.addEventListener("wheel", onWheel);
+            } else if ('onmousewheel' in document) {
+              elem.addEventListener("mousewheel", onWheel);
             } else {
-                elem.attachEvent("onmousewheel", onWheel);
+              elem.addEventListener("MozMousePixelScroll", onWheel);
             }
+          } else {
+            elem.attachEvent("onmousewheel", onWheel);
+          }
         }
         function minusBtn (e) {
-            transform.s += 0.1
-            setTranform(transform)
+          transform.s += 0.1
+          setTranform(transform)
         }
         function plusBtn (e) {
-            transform.s -= 0.1
-            setTranform(transform)
+          transform.s -= 0.1
+          setTranform(transform)
         }
         function setTranform(obj){
-            console.log('setTranform')
-            if(!elem__task__contImg) return
-            elem__task__contImg.style.transform = ` scale(${obj.s}) translate(${obj.x}px, ${obj.y}px)`;
+          // console.log('setTranform')
+          if(!elem__task__contImg) return
+          elem__task__contImg.style.transform = ` scale(${obj.s}) translate(${obj.x}px, ${obj.y}px)`;
         }
 
        
         function mouseDown(e){
-            
-            var coor = getCoor(e)
-            // console.log('mouseDown', coor.client)
-            basisCoor = coor
+          
+          var coor = getCoor(e)
+          basisCoor = coor
         }
         
         function mouseMove(e){
-            if(!basisCoor) return
-            elem__task__contImg.classList.add('task__move')
-            
-            var coor = getCoor(e)
-            var new_coor = getDiffCoor(coor)
+          if(!basisCoor) return
+          elem__task__contImg.classList.add('task__move')
+          
+          var coor = getCoor(e)
+          var new_coor = getDiffCoor(coor)
 
-            var transform_mouse = getCoorTranform(new_coor)
-            console.log(transform_mouse)
-            setTranform(transform_mouse)
+          var transform_mouse = getCoorTranform(new_coor)
+          // console.log(transform_mouse)
+          var check = setTransformOffset(transform_mouse)
+          // console.log('move',check, transform_mouse)
+          setTranform(check)
         }
 
         function getCoorTranform(coor){
-            return {
-                x: transform.x + coor.x/transform.s,
-                y: transform.y + coor.y/transform.s,
-                s: transform.s
-            }
+          return {
+            x: Math.floor(transform.x + coor.x/transform.s),
+            y: Math.floor(transform.y + coor.y/transform.s),
+            s: transform.s
+          }
         }
         function mouseUp(e){
-            elem__task__contImg.classList.remove('task__move')
+          elem__task__contImg.classList.remove('task__move')
 
-            if(e){
-                var coor = getCoor(e)
-                var new_coor = getDiffCoor(coor)
-                transform = getCoorTranform(new_coor)
-            } else {
-                new_coor = getDiffCoor(basisCoor)
-                transform = getCoorTranform(new_coor)
-            }
-            setTranform(transform)
-            basisCoor = null
+          if(e){
+            var coor = getCoor(e)
+            var new_coor = getDiffCoor(coor)
+            var get_coor = getCoorTranform(new_coor)
+            transform.x = get_coor.x
+            transform.y = get_coor.y
+          } else {
+            new_coor = getDiffCoor(basisCoor)
+            var get_coor = getCoorTranform(new_coor)
+            transform.x = get_coor.x
+            transform.y = get_coor.y
+          }
+          // setTranform(transform)
+          transform = setTransformOffset(transform)
+          setTranform(transform)
+          basisCoor = null
         }
         function getCoor(e) {
-            var posx = 0;
+          var posx = 0;
 	        var posy = 0;
-            if (e.pageX || e.pageY) {
-                posx = e.pageX;
-                posy = e.pageY;
-            } else if (e.clientX || e.clientY) {
-                posx = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-                posy = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-            }
-            return {
-                x : posx,
-                y : posy
-            };
+          if (e.pageX || e.pageY) {
+            posx = e.pageX;
+            posy = e.pageY;
+          } else if (e.clientX || e.clientY) {
+            posx = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+            posy = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+          }
+          return {
+            x : posx,
+            y : posy
+          };
         }
         function getDiffCoor(coor) {
-            if(!basisCoor) return {x: 0, y:0}
+          if(!basisCoor) return {x: 0, y:0}
 
-            return {
-                x: Math.floor(coor.x - basisCoor.x),
-                y: Math.floor(coor.y - basisCoor.y)
-            }
+          return {
+            x: Math.floor(coor.x - basisCoor.x),
+            y: Math.floor(coor.y - basisCoor.y)
+          }
         }
-        function onWheel(e) {
-            var target = e.target
-            var coor = getCoor(e)
-            var s = 0.1*(e.wheelDelta/Math.abs(e.wheelDelta))
+        function onWheel (ev) {
+            var coor = getCoor(ev)            
+
+            // var deltaY = ev.deltaY < 0 ? -1 : ev.deltaY > 1 ? 1 : 0
+            var s = 0.1*(ev.wheelDelta/Math.abs(ev.wheelDelta))
             var t_s = transform.s + s
-            
-            var x_1 = coor.x - target.clientWidth/2;
-            var y_1 = coor.y - target.clientHeight/2;
-            console.log(x_1, transform.x - target.clientWidth/2)
-            var diff_center = {
-                x: Math.ceil(x_1/t_s - x_1),// coor.client.x/(transform.s + s) - coor.client.x,
-                y: Math.ceil(y_1/t_s - y_1),// coor.client.y/(transform.s + s) - coor.client.y
-            }
-            
-            console.log(transform , diff_center)
-            console.log(transform.x*transform.s, transform.y*transform.s )
-            var diff_transfrom = {
-                x: transform.x*transform.s ,
-                y: transform.y*transform.s ,
-            }
-            
-            transform.x = diff_center.x
-            transform.y = diff_center.y
-            transform.s += s
-            setTranform(transform)
-        }
-        /*mouseWheel: function (ev) {
 
-            this.lastMousePos.x = ev.clientX;
-            this.lastMousePos.y = ev.clientY;
-
-            var deltaY = ev.deltaY < 0 ? -1 : ev.deltaY > 1 ? 1 : 0
-
-            this.setTransformScaleBasedOnWindowPoint(this.transformScale - deltaY * 0.1, this.lastMousePos);
+            setTransformScaleBasedOnWindowPoint(t_s, coor);
             ev.preventDefault();
             ev.stopPropagation();
             return false;
 
         }
-        setTransformScaleBasedOnWindowPoint: function (scale, p) {
-            var posUnderMouse0 = this.fromWindowToCanvas(p);
-            this.setTransformScale(scale);
-            var posUnderMouse1 = this.fromWindowToCanvas(p);
+        function setTransformScaleBasedOnWindowPoint(scale, p) {
+            var posUnderMouse0 = fromWindowToCanvas(p);
+            // this.setTransformScale(scale);
+            transform.s = scale
+            setTranform(transform)
+            var posUnderMouse1 = fromWindowToCanvas(p);
             var delta = posUnderMouse0.subPoint(posUnderMouse1);
 
-            this.setTransformOffset(this.transformOffset.subPoint(delta));
+            transform = setTransformOffset(transform.subPoint(delta))
+            // transform = transform.subPoint(delta)
+            
+            setTranform(transform)
         }
-        fromWindowToCanvas: function (pos) {
-            const rect = this.canvas.getBoundingClientRect();
+        function fromWindowToCanvas (pos) {
+            const rect = elem__task__contImg.getBoundingClientRect();
+            // console.log('rect', rect)
 
             var result = new Point(
-                (pos.x - rect.left) / this.transformScale - this.transformOffset.x,
-                (pos.y - rect.top) / this.transformScale - this.transformOffset.y
+                Math.floor((pos.x - rect.left) / transform.s - transform.x),
+                Math.floor((pos.y - rect.top) / transform.s - transform.y)
             );
 
             return result;
-        },
-        */
+        }
+        function setTransformOffset (p) {
+          
+          var elem = elem__task__contImg
+          
+          var x = (elem.clientWidth*transform.s - elem.clientWidth)/transform.s
+          var y = (elem.clientHeight*transform.s - elem.clientHeight)/transform.s
+          var minX1 = -x/2; // 0;          
+          var minX2 =  x/2; //elem__task__contImg.clientWidth*transform.s - img.clientWidth;
+          var minX = Math.min(minX1, minX2);
+          var maxX = Math.max(minX1, minX2);
+
+          var minY1 = -y/2; // 0;
+          var minY2 =  y/2; //elem__task__contImg.clientHeight*transform.s - img.clientHeight;
+          var minY = Math.min(minY1, minY2);
+          var maxY = Math.max(minY1, minY2);
+          return new Point(
+            clamp(p.x, minX, maxX),
+            clamp(p.y, minY, maxY),
+            p.s
+          )
+        }
+
+        function clamp(number, lower, upper) {
+          number = +number
+          lower = +lower
+          upper = +upper
+          lower = lower === lower ? lower : 0
+          upper = upper === upper ? upper : 0
+          if (number === number) {
+            number = number <= upper ? number : upper
+            number = number >= lower ? number : lower
+          }
+          return number
+        }
+
     </script>
 </head>
 <body>
