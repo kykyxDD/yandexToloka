@@ -152,6 +152,9 @@
             return this.subPoint(p).magnitude();
           }
         };
+        
+        
+        
         window.selectBox = null
         window.transform = new Point(0,0,1);
         window.min_scale = 0.3
@@ -229,6 +232,8 @@
           }
           return boxes
         }
+        
+        
         function rectIntersectRatio (firstBox, secondBox) {
           let firstLeft, firstTop, firstRight, firstBottom
           let secondLeft, secondTop, secondRight, secondBottom
@@ -274,6 +279,8 @@
           return sq1 / sq2
 
         }
+
+        
         function requestJson(json){
           var parents = document.body//this.getDOMElement()
           var elem = parents.querySelector(".task__cont-img");
@@ -559,3 +566,4 @@
     </div>
 </body>
 </html>
+

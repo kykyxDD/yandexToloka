@@ -1,0 +1,43 @@
+<div class="task__classes">
+  <input type="text" id="searchClass" placeholder='Поиск по id или по имени'>
+  <div class='cont-list-classes'></div>
+	<div class="message">
+     Сначало выберите класс
+  </div>
+</div>
+<div class="task__viewer">
+  <div class='task__headerViewImage'>
+    <div class="info-len-boxes">
+      <div class='d-flex x-center y-center '>
+      	<div class="ready-boxes">0/0</div>
+        <div class="show_done_marker">
+          <label>
+            <input type='checkbox' checked>
+            <span class='clone_input'></span>
+            <span class='text'>Показывать отмеченные объекты</span>
+          </label>
+        </div>
+      </div>
+      <div>
+        <div class="show_other">Подсветить оставшиеся объекты</div>
+      </div>
+    </div>
+  </div>
+  <div class="task__viewImage">
+    <div class="task__popupBox">
+      <div class="task__popupBox__cont">
+        <div class="task__popupBox__img"></div>
+        <div class="task__popupBox__info">
+          <div class="task__popupBox__name"></div>
+          <div class="task__popupBox__id"></div>
+        </div>
+      </div>
+    </div>
+    <div class="task__cont-img">
+      <img src="{{image}}" class='task-img'>
+      <!-- <img src="https://drive.google.com/uc?id=1Ut1Erp020vw9Z7vHn5_YJbeJ1exK5yCh" class='task-img'> -->
+	  </div>
+    <button id="minusBtn"></button>
+    <button id="plusBtn"></button>
+  </div>
+</div>
